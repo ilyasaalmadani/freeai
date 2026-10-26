@@ -53,6 +53,9 @@ pertama, dan sesi tersimpan (`resume`/`--continue`).
   Profil `~/.codex/freeai.config.toml` (wire_api responses, context window 131072),
   wrapper `~/.local/bin/codex-freeai` → symlink ke `codex-freeai` di repo.
   `codex-freeai` menyalakan bridge otomatis, lalu `codex -p freeai`.
+  Model default `auto` (fallback chain mulai dari model gratis terbesar);
+  wrapper mengembalikan profil ke `auto` bila berisi model non-gratis
+  (pengaman kuota, karena picker Codex menulis balik config).
   Diverifikasi end-to-end: `codex-freeai exec` menjawab dengan streaming + hooks.
 - 52 tes offline lulus (`python3 -m unittest discover -s tests -v`);
   smoke test streaming nyata sukses lewat FreeLLMAPI lokal (freellmapi/auto),

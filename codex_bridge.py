@@ -312,11 +312,15 @@ class Handler(BaseHTTPRequestHandler):
                     if allowed:
                         name = row.get("name") or row["id"]
                         compact = name.replace("/", "").replace("-", "").replace(".", "")
-                        if name not in allowed and row["id"] not in allowed and compact not in allowed:
+                        if row["id"] == "auto":
+                            pass  # router virtual: fallback chain seluruh model aktif
+                        elif name not in allowed and row["id"] not in allowed and compact not in allowed:
                             continue
                     item = dict(row)
                     item.setdefault("name", row["id"])
                     item.setdefault("display_name", row.get("name") or row["id"])
+                    if row["id"] == "auto":
+                        item["display_name"] = "Auto · semua model gratis (fallback chain)"
                     if "available" not in item:
                         item["available"] = True
                     if not item.get("execution_status"):

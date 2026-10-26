@@ -48,6 +48,19 @@ diteruskan ke FreeLLMAPI. Daftar model dibatasi pada model gratis yang
 diekspor FreeAI. Warning `Model metadata ... fallback` dari Codex untuk
 slug non-OpenAI tidak berbahaya; jendela konteks sudah diatur 131072.
 
+Model default adalah **`auto`**: fallback chain FreeLLMAPI yang merutekan
+otomatis mulai dari model gratis terbesar (Nemotron 3 Ultra 550B →
+Nemotron 3.5 Lightning → GPT-OSS 20B) dan pindah sendiri saat rate-limit.
+Ganti model sementara dengan Ctrl+M di TUI, atau lewat argumen:
+
+```sh
+codex-freeai -m nvidiagpt-oss-20b
+codex-freeai exec -m nvidianemotron-3.5-lightning "..."
+```
+
+Wrapper mengembalikan model ke `auto` pada tiap start bila profil sempat
+berisi model non-gratis (mis. terpilih dari picker Codex) — pengaman kuota.
+
 Ketik `/model` (atau `/models`) untuk membuka pemilih model. Pakai ↑↓ lalu Enter;
 Esc membatalkan. Di terminal tanpa tampilan interaktif, pilih dengan nomor.
 Model dipilih dari rute gratis yang siap dan pilihan disimpan untuk sesi berikutnya.
