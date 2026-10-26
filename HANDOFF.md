@@ -57,6 +57,12 @@ pertama, dan sesi tersimpan (`resume`/`--continue`).
   wrapper mengembalikan profil ke `auto` bila berisi model non-gratis
   (pengaman kuota, karena picker Codex menulis balik config).
   Diverifikasi end-to-end: `codex-freeai exec` menjawab dengan streaming + hooks.
+- **DeepSeek custom provider** ditambahkan ke FreeLLMAPI lewat dashboard API
+  (baseUrl `https://api.deepseek.com/v1`, key terenkripsi di database
+  FreeLLMAPI, TIDAK pernah masuk repo/ekspor). Model `deepseek-flash` dan
+  `deepseek-v4-pro` kini `ready` dan otomatis muncul di bridge/picker
+  `codex-freeai`; bridge menampilkan model yang siap, bukan hanya ekspor
+  keyless.
 - 52 tes offline lulus (`python3 -m unittest discover -s tests -v`);
   smoke test streaming nyata sukses lewat FreeLLMAPI lokal (freellmapi/auto),
   resume diverifikasi end-to-end lewat pseudo-TTY.

@@ -309,13 +309,14 @@ class Handler(BaseHTTPRequestHandler):
                 for row in data.get("data", []):
                     if not isinstance(row, dict) or not row.get("id"):
                         continue
-                    if allowed:
+                    visible = (row["id"] == "auto"
+                               or (row.get("available") is True and row.get("execution_status") == "ready"))
+                    if not visible and allowed:
                         name = row.get("name") or row["id"]
                         compact = name.replace("/", "").replace("-", "").replace(".", "")
-                        if row["id"] == "auto":
-                            pass  # router virtual: fallback chain seluruh model aktif
-                        elif name not in allowed and row["id"] not in allowed and compact not in allowed:
-                            continue
+                        visible = name in allowed or row["id"] in allowed or compact in allowed
+                    if not visible:
+                        continue
                     item = dict(row)
                     item.setdefault("name", row["id"])
                     item.setdefault("display_name", row.get("name") or row["id"])

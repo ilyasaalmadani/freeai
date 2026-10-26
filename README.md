@@ -44,27 +44,30 @@ codex-freeai exec "..."      # mode non-interaktif
 
 Model, status bar, picker, diff, hooks, subagent — semua fitur TUI Codex
 tetap ada; pemakaian model tidak memotong kuota OpenAI karena request
-diteruskan ke FreeLLMAPI. Daftar model dibatasi pada model gratis yang
-diekspor FreeAI. Warning `Model metadata ... fallback` dari Codex untuk
-slug non-OpenAI tidak berbahaya; jendela konteks sudah diatur 131072.
+diteruskan ke FreeLLMAPI. Daftar model di bridge = model yang **siap** di
+FreeLLMAPI: hasil ekspor keyless FreeAI, model custom ber-key yang kamu
+tambahkan sendiri lewat dashboard (mis. DeepSeek), dan `auto`.
+Warning `Model metadata ... fallback` dari Codex untuk slug non-OpenAI
+tidak berbahaya; jendela konteks sudah diatur 131072.
 
 Model default adalah **`auto`**: fallback chain FreeLLMAPI yang merutekan
 otomatis mulai dari model gratis terbesar (Nemotron 3 Ultra 550B →
 Nemotron 3.5 Lightning → GPT-OSS 20B) dan pindah sendiri saat rate-limit.
 Ganti model di TUI dengan perintah **`/model`** (Ctrl+M bukan binding di
 Codex versi ini — picker juga menampilkan model bawaan Codex/OpenAI yang
-bukan rute gratis; pilih hanya entri FreeAI), atau lewat argumen:
+bukan rute gratis; pilih hanya entri bridge), atau lewat argumen:
 
 ```sh
 codex-freeai -m nvidiagpt-oss-20b
 codex-freeai exec -m nvidianemotron-3.5-lightning "..."
 ```
 
-Model gratis yang valid: `auto`, `nvidiagpt-oss-20b`,
-`nvidianemotron-3.5-lightning`, `nvidianemotron-3-ultra-550b`.
+Model yang tersedia mengikuti isi bridge, misalnya: `auto`,
+`nvidiagpt-oss-20b`, `nvidianemotron-3.5-lightning`,
+`nvidianemotron-3-ultra-550b`, `deepseek-flash`, `deepseek-v4-pro`.
 Wrapper mengembalikan model ke `auto` pada tiap start bila profil berisi
 model di luar daftar bridge (pengaman kuota) dan menampilkan daftar model
-gratis saat itu.
+yang valid saat itu.
 
 Ketik `/model` (atau `/models`) untuk membuka pemilih model. Pakai ↑↓ lalu Enter;
 Esc membatalkan. Di terminal tanpa tampilan interaktif, pilih dengan nomor.
