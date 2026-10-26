@@ -1,0 +1,36 @@
+{
+  "providers": [
+    {
+      "id": "blockrun",
+      "name": "BlockRun",
+      "base_url": "https://blockrun.ai/api/v1",
+      "access": "keyless",
+      "catalog_url": "https://blockrun.ai/api/v1/models",
+      "catalog_kind": "blockrun",
+      "source": "https://blockrun.ai/free-gpt-oss",
+      "free_evidence": "Provider documents free GPT-OSS 20B without signup or API key; quota unspecified.",
+      "models": ["nvidia/gpt-oss-20b"]
+    },
+    {
+      "id": "groq",
+      "name": "Groq free plan",
+      "base_url": "https://api.groq.com/openai/v1",
+      "access": "free_account",
+      "auth_env": "FREEAI_GROQ_API_KEY",
+      "source": "https://console.groq.com/docs/rate-limits",
+      "free_evidence": "Use an account on the Free plan. All request and token limits apply together.",
+      "models": ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
+    },
+    {
+      "id": "openrouter",
+      "name": "OpenRouter free models",
+      "base_url": "https://openrouter.ai/api/v1",
+      "access": "free_account",
+      "auth_env": "FREEAI_OPENROUTER_API_KEY",
+      "source": "https://openrouter.ai/docs/api-reference/limits",
+      "catalog_url": "https://openrouter.ai/api/v1/models",
+      "free_evidence": "Only explicit :free model IDs with all published price fields equal to zero.",
+      "models": []
+    }
+  ]
+}
