@@ -51,15 +51,20 @@ slug non-OpenAI tidak berbahaya; jendela konteks sudah diatur 131072.
 Model default adalah **`auto`**: fallback chain FreeLLMAPI yang merutekan
 otomatis mulai dari model gratis terbesar (Nemotron 3 Ultra 550B →
 Nemotron 3.5 Lightning → GPT-OSS 20B) dan pindah sendiri saat rate-limit.
-Ganti model sementara dengan Ctrl+M di TUI, atau lewat argumen:
+Ganti model di TUI dengan perintah **`/model`** (Ctrl+M bukan binding di
+Codex versi ini — picker juga menampilkan model bawaan Codex/OpenAI yang
+bukan rute gratis; pilih hanya entri FreeAI), atau lewat argumen:
 
 ```sh
 codex-freeai -m nvidiagpt-oss-20b
 codex-freeai exec -m nvidianemotron-3.5-lightning "..."
 ```
 
-Wrapper mengembalikan model ke `auto` pada tiap start bila profil sempat
-berisi model non-gratis (mis. terpilih dari picker Codex) — pengaman kuota.
+Model gratis yang valid: `auto`, `nvidiagpt-oss-20b`,
+`nvidianemotron-3.5-lightning`, `nvidianemotron-3-ultra-550b`.
+Wrapper mengembalikan model ke `auto` pada tiap start bila profil berisi
+model di luar daftar bridge (pengaman kuota) dan menampilkan daftar model
+gratis saat itu.
 
 Ketik `/model` (atau `/models`) untuk membuka pemilih model. Pakai ↑↓ lalu Enter;
 Esc membatalkan. Di terminal tanpa tampilan interaktif, pilih dengan nomor.

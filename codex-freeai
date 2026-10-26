@@ -23,21 +23,24 @@ if ! curl -s -m 1 -o /dev/null http://127.0.0.1:3002/v1/models; then
   fi
 fi
 
-# Pengaman kuota: kalau model di profil bukan model gratis (mis. berubah
-# lewat picker Codex), kembalikan ke auto sebelum mulai.
+# Pengaman kuota: model yang boleh dipakai = yang dilayani bridge (auto +
+# model hasil ekspor FreeAI). Selain itu dikembalikan ke auto.
 CFG="$HOME/.codex/freeai.config.toml"
+ALLOWED="$(curl -s -m 3 -H "Authorization: Bearer $FREELLM_API_KEY" http://127.0.0.1:3002/v1/models | python3 -c 'import json, sys
+try:
+    print(" ".join(m["id"] for m in json.load(sys.stdin).get("data", [])))
+except Exception:
+    print("auto")' 2>/dev/null)"
+[[ -z "$ALLOWED" ]] && ALLOWED="auto"
 if [[ -f "$CFG" ]]; then
   CURRENT="$(grep -m1 '^model =' "$CFG" | sed -E 's/^model = "?([^\"]+)"?.*/\1/' | tr -d '[:space:]')"
-  case "$CURRENT" in
-    auto|nvidiagpt-oss-20b|nvidianemotron-3-ultra-550b|nvidianemotron-3.5-lightning) ;;
-    "")
-      printf 'model = "auto"\n' >> "$CFG"
-      ;;
-    *)
-      sed -i '' -E 's/^model = .*/model = "auto"/' "$CFG"
-      echo "Model $CURRENT bukan model gratis FreeAI; dikembalikan ke auto." >&2
-      ;;
-  esac
+  if [[ -z "$CURRENT" ]]; then
+    printf 'model = "auto"\n' >> "$CFG"
+  elif [[ " $ALLOWED " != *" $CURRENT "* ]]; then
+    sed -i '' -E 's/^model = .*/model = "auto"/' "$CFG"
+    echo "Model '$CURRENT' bukan model gratis FreeAI; dikembalikan ke auto." >&2
+    echo "Model gratis: $ALLOWED" >&2
+  fi
 fi
 
 exec codex -p freeai "$@"
