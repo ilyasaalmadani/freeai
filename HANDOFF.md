@@ -5,8 +5,8 @@ Terakhir diperbarui: 26 Oktober 2026.
 
 ## Versi saat ini
 
-**v0.5.0** — streaming jawaban token-demi-token (SSE), menu perintah interaktif,
-dan riwayat input persisten.
+**v0.6.0** — render Markdown inkremental saat streaming, spinner menunggu token
+pertama, dan sesi tersimpan (`resume`/`--continue`).
 
 ## Sudah selesai (Codex, sampai v0.4.0)
 
@@ -27,7 +27,7 @@ dan riwayat input persisten.
   meneruskan kredensial, kredensial disimpan privat (`~/.config/freeai`, mode 0700),
   key tidak pernah masuk `data/` atau ekspor.
 
-## Selesai oleh DeepSeek (v0.5.0, 26 Okt 2026)
+## Selesai oleh DeepSeek (v0.5.0–v0.6.0, 26 Okt 2026)
 
 - **Streaming SSE** token-demi-token ala TUI Codex (`stream_complete`):
   parsing `data:` incremental, perakitan `tool_calls` lintas chunk, dekoder UTF-8
@@ -38,9 +38,19 @@ dan riwayat input persisten.
   fallback daftar bernomor tanpa gum.
 - **Riwayat input persisten** `~/.config/freeai/history.txt` (maksimal 500 baris),
   dimuat/disimpan otomatis lewat readline.
+- **Render Markdown inkremental** saat streaming (`markdown_next` + `StreamPrinter`):
+  paragraf dan blok kode fenced dirender per unit dengan `gum format` (syntax
+  highlighting) tanpa menunggu jawaban selesai; blok kode ditahan sampai fence
+  tertutup agar tidak dirender setengah.
+- **Spinner menunggu token pertama** di stderr selama koneksi SSE belum
+  menghasilkan delta (`begin_wait`/`stop_wait`).
+- **Sesi tersimpan** `~/.config/freeai/session.json` (per folder + per mode):
+  `freeai resume`, `freeai code --continue`, `freeai chat --continue`;
+  `/clear` menimpa sesi, `/quit` mempertahankannya.
 - `/web` tanpa kata kunci sekarang menanyakan kata kunci bila terminal interaktif.
-- 41 tes offline lulus (`python3 -m unittest discover -s tests -v`);
-  smoke test streaming nyata sukses lewat FreeLLMAPI lokal (freellmapi/auto).
+- 46 tes offline lulus (`python3 -m unittest discover -s tests -v`);
+  smoke test streaming nyata sukses lewat FreeLLMAPI lokal (freellmapi/auto),
+  resume diverifikasi end-to-end lewat pseudo-TTY.
 
 ## Cara melanjutkan
 
@@ -52,10 +62,11 @@ freeai                                       # atau ./freeai.py
 
 - Backlog "parity Codex" yang belum dikerjakan ada di issue GitHub
   (repo `ilyasaalmadani/freeai`). Lihat issue #2 ke atas.
-- Kandidat berikutnya: spinner "menunggu token pertama" saat streaming lambat,
-  render markdown inkremental, tema terminal (gelap/terang), sesi/riwayat chat
-  tersimpan, `/undo` rollback perubahan file, dukungan AI Horde/adaptor protokol
-  non-OpenAI, pengukur sisa kuota per penyedia.
+- Kandidat berikutnya: tema terminal (gelap/terang), `/undo` rollback perubahan
+  file, keybinding ala Codex, dukungan AI Horde/adaptor protokol non-OpenAI,
+  pengukur sisa kuota per penyedia, render diff bertema terang.
+- Batas yang tidak bisa ditutup oleh UI: kecerdasan model gratisan jauh di bawah
+  GPT-6/Claude Opus yang dipakai Codex/Claude Code — jangan berjanji parity penuh.
 - Aturan yang tidak boleh dilanggar: jangan simpan key di `data/`/ekspor,
   jangan akses URL non-publik/non-HTTPS dari crawler, perubahan file dan
   perintah terminal di harness wajib persetujuan pemilik.

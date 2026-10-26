@@ -40,7 +40,7 @@ USER_CREDENTIALS = USER_DATA / "credentials.json"
 FREELLM_SERVICE = "FreeLLMAPI"
 MAX_BYTES = 8 * 1024 * 1024
 MAX_AGE_HOURS = 24
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 SEARCH_CACHE = {}
 PAGE_CACHE = {}
 SESSION_STATS = {"requests": 0, "tokens": 0, "web_searches": 0, "web_reads": 0, "served_model": None}
@@ -717,9 +717,11 @@ def ask_plain(messages, provider=None, model=None, printer=None):
             print(f'[{entry["provider"]} / {entry["model"]}]', file=sys.stderr)
             if printer and printer.enabled:
                 try:
+                    printer.begin_wait()
                     message, served, _ = stream_complete(entry, messages, max_tokens=2048, on_delta=printer.feed)
                 except Failure:
                     if printer:
+                        printer.stop_wait()
                         printer.aborted = True
                     message, served, _ = complete(entry, messages, max_tokens=2048)
             else:
@@ -1045,6 +1047,26 @@ def web_mode():
     return value if value in {"auto", "always", "off"} else "auto"
 
 
+def save_chat_session(workspace, code_mode, messages, selected_model):
+    save_json(USER_DATA / "session.json", {
+        "workspace": str(Path(workspace).resolve()),
+        "mode": "code" if code_mode else "chat",
+        "messages": messages,
+        "selected_model": selected_model,
+        "updated_at": now(),
+    })
+
+
+def load_chat_session(workspace, code_mode):
+    value = load_json(USER_DATA / "session.json", {})
+    messages = value.get("messages")
+    mode = "code" if code_mode else "chat"
+    if (not isinstance(value, dict) or value.get("workspace") != str(Path(workspace).resolve())
+            or value.get("mode") != mode or not isinstance(messages, list) or not messages):
+        return None, None
+    return messages, value.get("selected_model")
+
+
 def sourced_answer(text, sources):
     unique = {source["url"]: source.get("title", source["url"]) for source in sources if source.get("url")}
     if unique and not any(url in text for url in unique):
@@ -1134,12 +1156,14 @@ def run_assistant(messages, workspace=None, provider=None, model=None, max_turns
             try:
                 if printer.enabled:
                     try:
+                        printer.begin_wait()
                         answer, served, _ = stream_complete(
                             entry, history, max_tokens=3072 if code_mode else 2048, tools=tools,
                             task_type="code" if code_mode else "chat", tool_choice=forced_tool,
                             on_delta=printer.feed)
                     except Failure:
                         # Some routers reject stream: fall back to a normal call.
+                        printer.stop_wait()
                         printer.aborted = True
                         answer, served, _ = with_progress("FreeAI sedang berpikir", lambda: complete(
                             entry, history, max_tokens=3072 if code_mode else 2048, tools=tools,
@@ -1255,8 +1279,45 @@ def with_progress(label, action):
         worker.join(timeout=1)
 
 
+def render_markdown(text):
+    """Render markdown via gum (syntax highlighting) or return None."""
+    if not tui_enabled():
+        return None
+    try:
+        rendered = subprocess.run([shutil.which("gum"), "format", "--type", "markdown", "--theme", "dark"],
+                                  input=text, capture_output=True, text=True, timeout=6, check=False,
+                                  env=dict(os.environ, CLICOLOR_FORCE="1"))
+        if rendered.returncode == 0:
+            return rendered.stdout
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return None
+
+
+def markdown_next(buffer, fence):
+    """Split a growing markdown buffer into the next renderable unit.
+
+    Returns (emit, rest, fence): text ready to render (or None), the remaining
+    buffer, and the new fence marker (opened code fence) or None.
+    """
+    if fence is None:
+        match = re.search(r"(?m)^[ \t]*(`{3,}|~{3,})[^\n]*\n", buffer)
+        if match and match.start() > 0:
+            return buffer[:match.start()], buffer[match.start():], None
+        if match and match.start() == 0:
+            return None, buffer, match.group(1)
+        cut = buffer.rfind("\n\n")
+        if cut == -1:
+            return None, buffer, None
+        return buffer[:cut + 2], buffer[cut + 2:], None
+    close = re.search(r"(?m)^[ \t]*" + re.escape(fence) + r"[ \t]*\n", buffer)
+    if close:
+        return buffer[:close.end()], buffer[close.end():], None
+    return None, buffer, fence
+
+
 class StreamPrinter:
-    """Prints model deltas live, Codex-TUI style, without leaking ANSI bytes."""
+    """Prints model deltas live, Codex-TUI style: incremental markdown, ANSI-safe."""
 
     def __init__(self, enabled=None):
         if enabled is None:
@@ -1267,25 +1328,28 @@ class StreamPrinter:
         self.aborted = False
         self.header_shown = False
         self.pending = ""
-        self.decoder = codecs.getincrementaldecoder("utf-8")("replace")
+        self.buffer = ""
+        self.fence = None
+        self.waiting = None
 
     def reset(self):
+        self._stop_wait()
         if self.pending:
-            self._write(self._clean(self.pending))
+            self.buffer += self._clean(self.pending)
             self.pending = ""
+        self._flush_all()
         self.used = self.aborted = self.header_shown = False
-        self.decoder = codecs.getincrementaldecoder("utf-8")("replace")
 
     def finish(self):
+        self._stop_wait()
         if self.enabled and self.used:
-            if self.pending:
-                self._write(self._clean(self.pending))
-                self.pending = ""
+            self._flush_all()
             print(flush=True)
 
     def feed(self, text):
         if not self.enabled or not text:
             return
+        self._stop_wait()
         self.used = True
         if not self.header_shown:
             print("\n" + rainbow("◈ FREEAI  /  ANSWER"), flush=True)
@@ -1298,8 +1362,63 @@ class StreamPrinter:
             cleaned = cleaned[:partial.start()]
         else:
             self.pending = ""
-        if cleaned:
-            self._write(cleaned)
+        self.buffer += cleaned
+        self._flush_ready()
+
+    def begin_wait(self):
+        """Spin a stderr indicator until the first token arrives."""
+        if not self.enabled or self.waiting is not None or not sys.stderr.isatty():
+            return
+        stop = threading.Event()
+        frames = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+
+        def animate():
+            index = 0
+            while not stop.is_set():
+                sys.stderr.write("\r\033[2K" + terminal_color(frames[index % len(frames)] + " Menunggu jawaban model…", "2;36"))
+                sys.stderr.flush()
+                index += 1
+                stop.wait(0.09)
+            sys.stderr.write("\r\033[2K")
+            sys.stderr.flush()
+
+        worker = threading.Thread(target=animate, daemon=True)
+        worker.start()
+        self.waiting = (stop, worker)
+
+    def stop_wait(self):
+        self._stop_wait()
+
+    def _stop_wait(self):
+        if self.waiting:
+            stop, worker = self.waiting
+            stop.set()
+            worker.join(timeout=1)
+            self.waiting = None
+
+    def _flush_ready(self):
+        while True:
+            emit, rest, fence = markdown_next(self.buffer, self.fence)
+            if emit is None:
+                self.buffer = rest
+                self.fence = fence
+                return
+            self.buffer = rest
+            self.fence = fence
+            self._emit(emit)
+
+    def _flush_all(self):
+        if self.buffer:
+            self._emit(self.buffer)
+            self.buffer = ""
+            self.fence = None
+
+    def _emit(self, chunk):
+        rendered = render_markdown(chunk)
+        if rendered is not None:
+            self._write(rendered if rendered.endswith("\n") else rendered + "\n")
+        else:
+            self._write(chunk)
 
     @staticmethod
     def _clean(text):
@@ -1337,16 +1456,10 @@ def print_assistant(text):
     text = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", text)
     text = "".join(char for char in text if char in "\n\t" or ord(char) >= 32)
     print("\n" + rainbow("◈ FREEAI  /  ANSWER"))
-    if tui_enabled():
-        try:
-            rendered = subprocess.run([shutil.which("gum"), "format", "--type", "markdown", "--theme", "dark"],
-                                      input=text, capture_output=True, text=True, timeout=6, check=False,
-                                      env=dict(os.environ, CLICOLOR_FORCE="1"))
-            if rendered.returncode == 0:
-                print(rendered.stdout, end="" if rendered.stdout.endswith("\n") else "\n")
-                return
-        except (OSError, subprocess.TimeoutExpired):
-            pass
+    rendered = render_markdown(text)
+    if rendered is not None:
+        print(rendered, end="" if rendered.endswith("\n") else "\n")
+        return
     print(text)
 
 
@@ -1551,14 +1664,22 @@ def print_cli_help(code_mode=False):
     for name, description in commands:
         print(f"  {name:<22} {description}")
     print("  Tab melengkapi perintah · ↑↓ riwayat pesan · Ctrl+C membatalkan proses")
+    print("  Sesi tersimpan otomatis; freeai resume atau --continue melanjutkannya")
     print("  Di /compose: Enter kirim · Ctrl+J baris baru · tempel teks beberapa baris")
     if code_mode:
         print("  Perubahan file dan perintah terminal meminta persetujuan.")
 
 
-def interactive_cli(code_mode=True, provider=None, max_turns=8, model=None):
+def interactive_cli(code_mode=True, provider=None, max_turns=8, model=None, resume=False):
     workspace = Path.cwd().resolve()
+    saved_messages, saved_model = (None, None)
+    if resume:
+        saved_messages, saved_model = load_chat_session(workspace, code_mode)
+        if saved_messages:
+            print(terminal_color(f"  Sesi tersimpan ditemukan · {len(saved_messages)} pesan · /clear untuk mulai baru", "1;36"))
     preferred = load_json(USER_SETTINGS, {}).get("preferred_model") if model is None else model
+    if model is None and saved_model:
+        preferred = saved_model
     try:
         _, routes = available_routes(provider, preferred, with_tools=code_mode)
         selected_model = preferred
@@ -1572,7 +1693,7 @@ def interactive_cli(code_mode=True, provider=None, max_turns=8, model=None):
         raise Failure("Belum ada model siap. Jalankan `freeai connect` atau `freeai refresh --tools`.")
     print_banner("coding" if code_mode else "chat", workspace, routes)
     print(terminal_color("  / atau /menu perintah · /model pilih model · /compose pesan panjang · Ctrl+D keluar", "2"))
-    messages, last_answer = [], ""
+    messages, last_answer = (saved_messages or []), ""
     printer = StreamPrinter()
     previous_completer = readline.get_completer() if readline else None
     previous_delims = readline.get_completer_delims() if readline else None
@@ -1635,6 +1756,7 @@ def interactive_cli(code_mode=True, provider=None, max_turns=8, model=None):
             if prompt == "/clear":
                 messages.clear()
                 last_answer = ""
+                save_chat_session(workspace, code_mode, messages, selected_model)
                 print("Percakapan baru. Model tetap " + current_model_label(selected_model) + ".")
                 continue
             if prompt == "/status":
@@ -1737,6 +1859,7 @@ def interactive_cli(code_mode=True, provider=None, max_turns=8, model=None):
             print(terminal_color(f"  ✓ {time.monotonic() - started:.1f} detik · {calls} panggilan · {tokens:,} token · {searches} pencarian", "2"))
             last_answer = answer
             messages = history + [{"role": "assistant", "content": answer}]
+            save_chat_session(workspace, code_mode, messages, selected_model)
     finally:
         if readline:
             readline.set_completer(previous_completer)
@@ -1748,12 +1871,12 @@ def interactive_cli(code_mode=True, provider=None, max_turns=8, model=None):
                 pass
 
 
-def coding_cli(provider=None, max_turns=8, model=None):
-    return interactive_cli(True, provider, max_turns, model)
+def coding_cli(provider=None, max_turns=8, model=None, resume=False):
+    return interactive_cli(True, provider, max_turns, model, resume=resume)
 
 
-def chat_cli(provider=None, model=None):
-    return interactive_cli(False, provider, model=model)
+def chat_cli(provider=None, model=None, resume=False):
+    return interactive_cli(False, provider, model=model, resume=resume)
 
 
 def add_provider(args):
@@ -1871,10 +1994,13 @@ def main():
     p = sub.add_parser("chat")
     p.add_argument("--provider")
     p.add_argument("--model", help="Pilih model atau nama penyedia")
+    p.add_argument("--continue", dest="resume", action="store_true", help="Lanjutkan sesi chat tersimpan")
     p = sub.add_parser("code", help="Buka coding CLI interaktif; perintah default jika tidak ada subcommand")
     p.add_argument("--provider", help="Batasi ke satu penyedia gratis")
     p.add_argument("--max-turns", type=int, default=8, help="Maksimum giliran agent per permintaan (1–12)")
     p.add_argument("--model", help="Pilih model atau nama penyedia")
+    p.add_argument("--continue", dest="resume", action="store_true", help="Lanjutkan sesi coding tersimpan")
+    sub.add_parser("resume", help="Lanjutkan sesi coding terakhir dari folder yang sama")
     p = sub.add_parser("add")
     p.add_argument("--name", required=True)
     p.add_argument("--base-url", required=True)
@@ -1892,7 +2018,9 @@ def main():
             turns = getattr(args, "max_turns", 8)
             if turns < 1 or turns > 12:
                 raise Failure("--max-turns harus 1–12")
-            coding_cli(getattr(args, "provider", None), turns, getattr(args, "model", None))
+            coding_cli(getattr(args, "provider", None), turns, getattr(args, "model", None), resume=getattr(args, "resume", False))
+        elif args.command == "resume":
+            coding_cli(resume=True)
         elif args.command in ("discover", "refresh"):
             discover(args.web)
             if args.command == "refresh":
@@ -1913,7 +2041,7 @@ def main():
         elif args.command == "ask":
             print(ask([{"role": "user", "content": args.prompt}], args.provider, args.model))
         elif args.command == "chat":
-            chat_cli(args.provider, args.model)
+            chat_cli(args.provider, args.model, resume=args.resume)
         elif args.command == "add":
             add_provider(args)
         elif args.command == "connect":

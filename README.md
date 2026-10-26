@@ -21,6 +21,11 @@ Perintah coding yang sama dengan penyedia tertentu:
 freeai code --provider blockrun
 ```
 
+Sesi tersimpan otomatis di `~/.config/freeai/session.json` (per folder proyek dan
+per mode). Lanjutkan dengan `freeai resume` (coding), `freeai code --continue`,
+atau `freeai chat --continue`. `/clear` memulai konteks baru dan menimpa sesi
+tersimpan; `/quit` mempertahankannya.
+
 Ketik `/model` (atau `/models`) untuk membuka pemilih model. Pakai ↑↓ lalu Enter;
 Esc membatalkan. Di terminal tanpa tampilan interaktif, pilih dengan nomor.
 Model dipilih dari rute gratis yang siap dan pilihan disimpan untuk sesi berikutnya.
@@ -82,13 +87,15 @@ freeai list
 
 `refresh` menjalankan pencarian/crawl, tes kecil, lalu ekspor konfigurasi.
 Tidak ada proses latar atau jadwal otomatis. Jalankan lagi untuk memperbarui.
-`chat` menyimpan percakapan hanya di memori; `/clear` menghapus konteks dan
-`/quit` keluar. Coding CLI juga menyimpan konteks hanya di memori.
+Percakapan chat dan coding tersimpan otomatis untuk `resume`/`--continue`
+(lihat bagian atas); tanpa itu, konteks hanya hidup selama sesi berjalan.
 Terminal memakai aksen rainbow pada logo dan garis panel, status model dan auto web di dekat input,
 indikator proses, dan tampilan Markdown melalui `gum` bila tersedia. `gum` juga dipakai
 untuk pemilih model, pemilih perintah, editor pesan panjang, dan dialog persetujuan.
 Di terminal interaktif, jawaban ditampilkan secara streaming token demi token (SSE)
-seperti TUI Codex; penyedia yang menolak streaming otomatis jatuh kembali ke jawaban
+seperti TUI Codex: paragraf dan blok kode dirender inkremental dengan `gum`
+(syntax highlighting) sambil menunggu sisanya, disertai spinner menunggu token
+pertama. Penyedia yang menolak streaming otomatis jatuh kembali ke jawaban
 biasa yang dirender dengan `gum`. Set `FREEAI_STREAM=0` untuk mematikan streaming.
 Tanpa `gum`, perintah utama tetap berjalan dalam mode
 teks biasa. Set `FREEAI_PLAIN=1` untuk memaksa mode biasa.

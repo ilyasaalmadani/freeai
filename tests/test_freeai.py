@@ -408,6 +408,62 @@ class FreeAI(unittest.TestCase):
         with patch.object(app, "tui_enabled", return_value=False), patch("builtins.input", return_value=""), contextlib.redirect_stdout(io.StringIO()):
             self.assertIsNone(app.command_menu())
 
+    def test_markdown_next_splits_paragraphs_and_holds_open_fences(self):
+        self.assertEqual(app.markdown_next("satu\n\n", None), ("satu\n\n", "", None))
+        self.assertEqual(app.markdown_next("belum selesai", None), (None, "belum selesai", None))
+        self.assertEqual(app.markdown_next("```py\nx = 1\n", None), (None, "```py\nx = 1\n", "```"))
+        self.assertEqual(app.markdown_next("```py\nx = 1\n```\n", "```"), ("```py\nx = 1\n```\n", "", None))
+        emit, rest, fence = app.markdown_next("teks\n\n```py\n", None)
+        self.assertEqual((emit, rest, fence), ("teks\n\n", "```py\n", None))
+        emit, rest, fence = app.markdown_next(rest, None)
+        self.assertEqual((emit, fence), (None, "```"))
+
+    def test_stream_printer_renders_paragraphs_incrementally(self):
+        printer = app.StreamPrinter(enabled=True)
+        out = io.StringIO()
+        rendered = []
+        with patch.object(app, "render_markdown", side_effect=lambda text: rendered.append(text) or ("R:" + text.replace("\n", "|") + "|\n")), \
+             patch.object(app.sys, "stdout", out):
+            printer.feed("paragraf satu.\n\n")
+            printer.feed("paragraf dua.")
+            printer.finish()
+        self.assertIn("R:paragraf satu.|", out.getvalue())
+        self.assertIn("R:paragraf dua.|", out.getvalue())
+
+    def test_stream_printer_waits_for_closed_code_fence(self):
+        printer = app.StreamPrinter(enabled=True)
+        out = io.StringIO()
+        rendered = []
+        with patch.object(app, "render_markdown", side_effect=lambda text: rendered.append(text) or ("R:" + text)), \
+             patch.object(app.sys, "stdout", out):
+            printer.feed("```python\nx = 1\n")
+            printer.feed("y = 2\n```\n")
+            printer.finish()
+        self.assertEqual(len(rendered), 1)
+        self.assertIn("x = 1", rendered[0])
+        self.assertIn("y = 2", rendered[0])
+
+    def test_session_saved_and_resumed_for_same_workspace_and_mode(self):
+        workspace = Path(self.directory.name)
+        messages = [{"role": "user", "content": "halo"}, {"role": "assistant", "content": "hai"}]
+        app.save_chat_session(workspace, True, messages, "first/test")
+        self.assertEqual(app.load_chat_session(workspace, True), (messages, "first/test"))
+        self.assertEqual(app.load_chat_session(workspace / "lain", True), (None, None))
+        self.assertEqual(app.load_chat_session(workspace, False), (None, None))
+
+    def test_resume_restores_saved_messages_in_cli(self):
+        row = entry()
+        row["check"]["tools"] = "passed"
+        self.catalog([row])
+        app.save_chat_session(Path.cwd(), True, [{"role": "user", "content": "pertanyaan lama"}], None)
+        inputs = ["/status", "/quit"]
+        out = io.StringIO()
+        with patch.object(app, "read_prompt", side_effect=inputs), patch.object(app, "agent_reply") as reply, \
+             contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            app.coding_cli(resume=True)
+        reply.assert_not_called()
+        self.assertIn("Pesan dalam konteks: 1", out.getvalue())
+
 
 class FakeStreamResponse:
     def __init__(self, chunks, content_type="text/event-stream"):
