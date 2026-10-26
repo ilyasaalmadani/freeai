@@ -1,0 +1,26 @@
+#!/bin/zsh
+# Codex asli dengan model gratis FreeAI (FreeLLMAPI lokal lewat bridge).
+# Tampilan/UX 100% Codex; pemakaian model tidak memotong kuota OpenAI.
+BRIDGE_DIR="$HOME/Projects/free-ai-collector"
+
+export FREELLM_API_KEY="$(python3 -c 'import json, pathlib; print(json.load(open(pathlib.Path.home()/".config/freeai/credentials.json", encoding="utf-8")).get("api_key", ""))' 2>/dev/null)"
+if [[ -z "$FREELLM_API_KEY" ]]; then
+  echo "FreeAI belum terhubung ke FreeLLMAPI. Jalankan dulu: freeai connect" >&2
+  exit 1
+fi
+
+# Pastikan jembatan Responses->Chat berjalan di 127.0.0.1:3002.
+if ! curl -s -m 1 -o /dev/null http://127.0.0.1:3002/v1/models; then
+  if curl -s -m 1 -o /dev/null http://127.0.0.1:3001/api/auth/status; then
+    nohup python3 "$BRIDGE_DIR/codex_bridge.py" >> "$BRIDGE_DIR/data/codex-bridge.log" 2>&1 &
+    for i in {1..20}; do
+      curl -s -m 1 -o /dev/null http://127.0.0.1:3002/v1/models && break
+      sleep 0.25
+    done
+  else
+    echo "FreeLLMAPI lokal (127.0.0.1:3001) tidak berjalan." >&2
+    exit 1
+  fi
+fi
+
+exec codex -p freeai "$@"

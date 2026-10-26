@@ -26,6 +26,28 @@ per mode). Lanjutkan dengan `freeai resume` (coding), `freeai code --continue`,
 atau `freeai chat --continue`. `/clear` memulai konteks baru dan menimpa sesi
 tersimpan; `/quit` mempertahankannya.
 
+## Mau tampilan Codex asli? `codex-freeai`
+
+Codex CLI (0.164+) hanya menerima provider ber-Responses API, sedangkan
+FreeLLMAPI hanya menyediakan Chat Completions. Repo ini memuat
+[`codex_bridge.py`](codex_bridge.py): jembatan Responses→Chat di
+`127.0.0.1:3002` yang meneruskan ke FreeLLMAPI. Profilnya ada di
+`~/.codex/freeai.config.toml`, dan wrapper `codex-freeai`
+(`~/.local/bin/codex-freeai`) menyalakan bridge bila perlu lalu menjalankan
+Codex dengan profil tersebut.
+
+```sh
+codex-freeai                 # TUI Codex 100% asli, model gratis FreeAI
+codex-freeai resume          # lanjut sesi Codex sebelumnya
+codex-freeai exec "..."      # mode non-interaktif
+```
+
+Model, status bar, picker, diff, hooks, subagent — semua fitur TUI Codex
+tetap ada; pemakaian model tidak memotong kuota OpenAI karena request
+diteruskan ke FreeLLMAPI. Daftar model dibatasi pada model gratis yang
+diekspor FreeAI. Warning `Model metadata ... fallback` dari Codex untuk
+slug non-OpenAI tidak berbahaya; jendela konteks sudah diatur 131072.
+
 Ketik `/model` (atau `/models`) untuk membuka pemilih model. Pakai ↑↓ lalu Enter;
 Esc membatalkan. Di terminal tanpa tampilan interaktif, pilih dengan nomor.
 Model dipilih dari rute gratis yang siap dan pilihan disimpan untuk sesi berikutnya.

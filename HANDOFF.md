@@ -48,7 +48,13 @@ pertama, dan sesi tersimpan (`resume`/`--continue`).
   `freeai resume`, `freeai code --continue`, `freeai chat --continue`;
   `/clear` menimpa sesi, `/quit` mempertahankannya.
 - `/web` tanpa kata kunci sekarang menanyakan kata kunci bila terminal interaktif.
-- 46 tes offline lulus (`python3 -m unittest discover -s tests -v`);
+- **Codex asli dengan model FreeAI** (`codex_bridge.py`): jembatan Responses→Chat
+  di 127.0.0.1:3002 karena Codex 0.164+ sudah menghapus `wire_api = "chat"`.
+  Profil `~/.codex/freeai.config.toml` (wire_api responses, context window 131072),
+  wrapper `~/.local/bin/codex-freeai` → symlink ke `codex-freeai` di repo.
+  `codex-freeai` menyalakan bridge otomatis, lalu `codex -p freeai`.
+  Diverifikasi end-to-end: `codex-freeai exec` menjawab dengan streaming + hooks.
+- 52 tes offline lulus (`python3 -m unittest discover -s tests -v`);
   smoke test streaming nyata sukses lewat FreeLLMAPI lokal (freellmapi/auto),
   resume diverifikasi end-to-end lewat pseudo-TTY.
 
@@ -57,7 +63,8 @@ pertama, dan sesi tersimpan (`resume`/`--continue`).
 ```sh
 cd ~/Projects/free-ai-collector
 python3 -m unittest discover -s tests -v   # wajib hijau sebelum lanjut
-freeai                                       # atau ./freeai.py
+freeai                                       # CLI buatan sendiri (v0.6.0)
+codex-freeai                                 # Codex asli + model FreeAI
 ```
 
 - Backlog "parity Codex" yang belum dikerjakan ada di issue GitHub
