@@ -54,17 +54,20 @@ Model default adalah **`auto`**: fallback chain FreeLLMAPI yang merutekan
 otomatis mulai dari model gratis terbesar (Nemotron 3 Ultra 550B →
 Nemotron 3.5 Lightning → GPT-OSS 20B) dan pindah sendiri saat rate-limit.
 Ganti model di TUI dengan perintah **`/model`** (Ctrl+M bukan binding di
-Codex versi ini — picker juga menampilkan model bawaan Codex/OpenAI yang
-bukan rute gratis; pilih hanya entri bridge), atau lewat argumen:
+Codex versi ini) atau lewat argumen:
 
 ```sh
 codex-freeai -m nvidiagpt-oss-20b
 codex-freeai exec -m nvidianemotron-3.5-lightning "..."
 ```
 
-Model yang tersedia mengikuti isi bridge, misalnya: `auto`,
-`nvidiagpt-oss-20b`, `nvidianemotron-3.5-lightning`,
-`nvidianemotron-3-ultra-550b`, `deepseek-flash`, `deepseek-v4-pro`.
+Agar picker `/model` menampilkan model FreeAI (bukan katalog bawaan OpenAI),
+profil memakai `model_catalog_json` → [`codex-models.json`](codex-models.json)
+(terpasang sebagai `~/.codex/freeai-models.json`). Isinya:
+`auto`, `deepseek-flash`, `deepseek-v4-pro`, `nvidiagpt-oss-20b`,
+`nvidianemotron-3.5-lightning`, `nvidianemotron-3-ultra-550b`.
+Saat model baru ditambahkan ke FreeLLMAPI, tambahkan juga entrinya di
+`codex-models.json` supaya muncul di picker.
 Wrapper mengembalikan model ke `auto` pada tiap start bila profil berisi
 model di luar daftar bridge (pengaman kuota) dan menampilkan daftar model
 yang valid saat itu.

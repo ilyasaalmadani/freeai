@@ -63,6 +63,14 @@ pertama, dan sesi tersimpan (`resume`/`--continue`).
   `deepseek-v4-pro` kini `ready` dan otomatis muncul di bridge/picker
   `codex-freeai`; bridge menampilkan model yang siap, bukan hanya ekspor
   keyless.
+- **Model catalog picker** `codex-models.json` (symlink `~/.codex/freeai-models.json`)
+  dipasang lewat `model_catalog_json` di profil: picker `/model` kini
+  menampilkan 6 model FreeAI (auto, deepseek-flash, deepseek-v4-pro, 3 NVIDIA),
+  bukan katalog bawaan OpenAI, dan warning metadata hilang. Skema mengikuti
+  `ModelInfo` di `codex-rs/protocol/src/openai_models.rs` (field wajib:
+  `availability_nux`, `upgrade`, `default_verbosity`, `apply_patch_tool_type`,
+  `truncation_policy`, `experimental_supported_tools`, dan
+  `model_messages.instructions_template`).
 - 52 tes offline lulus (`python3 -m unittest discover -s tests -v`);
   smoke test streaming nyata sukses lewat FreeLLMAPI lokal (freellmapi/auto),
   resume diverifikasi end-to-end lewat pseudo-TTY.

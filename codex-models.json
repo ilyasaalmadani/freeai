@@ -1,0 +1,353 @@
+{
+  "models": [
+    {
+      "slug": "auto",
+      "display_name": "Auto · semua model FreeAI",
+      "description": "Fallback chain FreeLLMAPI: DeepSeek + NVIDIA, pindah otomatis saat rate-limit.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Jawaban cepat"
+        },
+        {
+          "effort": "medium",
+          "description": "Seimbang"
+        },
+        {
+          "effort": "high",
+          "description": "Penalaran lebih dalam"
+        }
+      ],
+      "shell_type": "unified_exec",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 0,
+      "service_tiers": [
+        {
+          "id": "default",
+          "name": "Standard",
+          "description": "Standard"
+        }
+      ],
+      "model_messages": {
+        "instructions_template": "You are a coding agent working in the user's terminal. You and the user share the same workspace.\n\nWork directly in the repository: inspect files with the available tools, make focused edits, and run the project's commands when needed. Prefer the project's existing conventions. Keep answers short and concrete, in the user's language. If a command or edit is risky or ambiguous, ask first. Never print secrets, API keys, or credential files. Report what you changed and the verification you ran.",
+        "approvals": null,
+        "collaboration_modes": null,
+        "auto_review": null,
+        "permissions": null,
+        "multi_agent": null
+      },
+      "availability_nux": null,
+      "upgrade": null,
+      "support_verbosity": false,
+      "default_verbosity": null,
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_image_detail_original": false,
+      "context_window": 131072,
+      "max_context_window": 131072,
+      "effective_context_window_percent": 90,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text"
+      ],
+      "supports_search_tool": false
+    },
+    {
+      "slug": "deepseek-flash",
+      "display_name": "DeepSeek Flash",
+      "description": "DeepSeek Flash via API pribadi, context 1M, mendukung gambar.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Jawaban cepat"
+        },
+        {
+          "effort": "medium",
+          "description": "Seimbang"
+        },
+        {
+          "effort": "high",
+          "description": "Penalaran lebih dalam"
+        }
+      ],
+      "shell_type": "unified_exec",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 1,
+      "service_tiers": [
+        {
+          "id": "default",
+          "name": "Standard",
+          "description": "Standard"
+        }
+      ],
+      "model_messages": {
+        "instructions_template": "You are a coding agent working in the user's terminal. You and the user share the same workspace.\n\nWork directly in the repository: inspect files with the available tools, make focused edits, and run the project's commands when needed. Prefer the project's existing conventions. Keep answers short and concrete, in the user's language. If a command or edit is risky or ambiguous, ask first. Never print secrets, API keys, or credential files. Report what you changed and the verification you ran.",
+        "approvals": null,
+        "collaboration_modes": null,
+        "auto_review": null,
+        "permissions": null,
+        "multi_agent": null
+      },
+      "availability_nux": null,
+      "upgrade": null,
+      "support_verbosity": false,
+      "default_verbosity": null,
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_image_detail_original": false,
+      "context_window": 1048576,
+      "max_context_window": 1048576,
+      "effective_context_window_percent": 90,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": false
+    },
+    {
+      "slug": "deepseek-v4-pro",
+      "display_name": "DeepSeek V4 Pro",
+      "description": "DeepSeek V4 Pro via API pribadi, context 1M.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Jawaban cepat"
+        },
+        {
+          "effort": "medium",
+          "description": "Seimbang"
+        },
+        {
+          "effort": "high",
+          "description": "Penalaran lebih dalam"
+        }
+      ],
+      "shell_type": "unified_exec",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 2,
+      "service_tiers": [
+        {
+          "id": "default",
+          "name": "Standard",
+          "description": "Standard"
+        }
+      ],
+      "model_messages": {
+        "instructions_template": "You are a coding agent working in the user's terminal. You and the user share the same workspace.\n\nWork directly in the repository: inspect files with the available tools, make focused edits, and run the project's commands when needed. Prefer the project's existing conventions. Keep answers short and concrete, in the user's language. If a command or edit is risky or ambiguous, ask first. Never print secrets, API keys, or credential files. Report what you changed and the verification you ran.",
+        "approvals": null,
+        "collaboration_modes": null,
+        "auto_review": null,
+        "permissions": null,
+        "multi_agent": null
+      },
+      "availability_nux": null,
+      "upgrade": null,
+      "support_verbosity": false,
+      "default_verbosity": null,
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_image_detail_original": false,
+      "context_window": 1048576,
+      "max_context_window": 1048576,
+      "effective_context_window_percent": 90,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text"
+      ],
+      "supports_search_tool": false
+    },
+    {
+      "slug": "nvidiagpt-oss-20b",
+      "display_name": "GPT-OSS 20B",
+      "description": "Model gratis NVIDIA GPT-OSS 20B via FreeLLMAPI.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Jawaban cepat"
+        },
+        {
+          "effort": "medium",
+          "description": "Seimbang"
+        },
+        {
+          "effort": "high",
+          "description": "Penalaran lebih dalam"
+        }
+      ],
+      "shell_type": "unified_exec",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 3,
+      "service_tiers": [
+        {
+          "id": "default",
+          "name": "Standard",
+          "description": "Standard"
+        }
+      ],
+      "model_messages": {
+        "instructions_template": "You are a coding agent working in the user's terminal. You and the user share the same workspace.\n\nWork directly in the repository: inspect files with the available tools, make focused edits, and run the project's commands when needed. Prefer the project's existing conventions. Keep answers short and concrete, in the user's language. If a command or edit is risky or ambiguous, ask first. Never print secrets, API keys, or credential files. Report what you changed and the verification you ran.",
+        "approvals": null,
+        "collaboration_modes": null,
+        "auto_review": null,
+        "permissions": null,
+        "multi_agent": null
+      },
+      "availability_nux": null,
+      "upgrade": null,
+      "support_verbosity": false,
+      "default_verbosity": null,
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_image_detail_original": false,
+      "context_window": 131072,
+      "max_context_window": 131072,
+      "effective_context_window_percent": 90,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text"
+      ],
+      "supports_search_tool": false
+    },
+    {
+      "slug": "nvidianemotron-3.5-lightning",
+      "display_name": "Nemotron 3.5 Lightning",
+      "description": "Model gratis NVIDIA Nemotron 3.5 Lightning via FreeLLMAPI.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Jawaban cepat"
+        },
+        {
+          "effort": "medium",
+          "description": "Seimbang"
+        },
+        {
+          "effort": "high",
+          "description": "Penalaran lebih dalam"
+        }
+      ],
+      "shell_type": "unified_exec",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 4,
+      "service_tiers": [
+        {
+          "id": "default",
+          "name": "Standard",
+          "description": "Standard"
+        }
+      ],
+      "model_messages": {
+        "instructions_template": "You are a coding agent working in the user's terminal. You and the user share the same workspace.\n\nWork directly in the repository: inspect files with the available tools, make focused edits, and run the project's commands when needed. Prefer the project's existing conventions. Keep answers short and concrete, in the user's language. If a command or edit is risky or ambiguous, ask first. Never print secrets, API keys, or credential files. Report what you changed and the verification you ran.",
+        "approvals": null,
+        "collaboration_modes": null,
+        "auto_review": null,
+        "permissions": null,
+        "multi_agent": null
+      },
+      "availability_nux": null,
+      "upgrade": null,
+      "support_verbosity": false,
+      "default_verbosity": null,
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_image_detail_original": false,
+      "context_window": 131072,
+      "max_context_window": 131072,
+      "effective_context_window_percent": 90,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text"
+      ],
+      "supports_search_tool": false
+    },
+    {
+      "slug": "nvidianemotron-3-ultra-550b",
+      "display_name": "Nemotron 3 Ultra 550B",
+      "description": "Model gratis terbesar NVIDIA Nemotron 3 Ultra 550B via FreeLLMAPI.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Jawaban cepat"
+        },
+        {
+          "effort": "medium",
+          "description": "Seimbang"
+        },
+        {
+          "effort": "high",
+          "description": "Penalaran lebih dalam"
+        }
+      ],
+      "shell_type": "unified_exec",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 5,
+      "service_tiers": [
+        {
+          "id": "default",
+          "name": "Standard",
+          "description": "Standard"
+        }
+      ],
+      "model_messages": {
+        "instructions_template": "You are a coding agent working in the user's terminal. You and the user share the same workspace.\n\nWork directly in the repository: inspect files with the available tools, make focused edits, and run the project's commands when needed. Prefer the project's existing conventions. Keep answers short and concrete, in the user's language. If a command or edit is risky or ambiguous, ask first. Never print secrets, API keys, or credential files. Report what you changed and the verification you ran.",
+        "approvals": null,
+        "collaboration_modes": null,
+        "auto_review": null,
+        "permissions": null,
+        "multi_agent": null
+      },
+      "availability_nux": null,
+      "upgrade": null,
+      "support_verbosity": false,
+      "default_verbosity": null,
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_image_detail_original": false,
+      "context_window": 131072,
+      "max_context_window": 131072,
+      "effective_context_window_percent": 90,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text"
+      ],
+      "supports_search_tool": false
+    }
+  ]
+}
